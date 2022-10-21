@@ -7,9 +7,20 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Toast;
 
+import com.example.lifeguard.Api.Request;
+import com.example.lifeguard.Api.RetrofitClient;
+import com.example.lifeguard.Api.Score;
+
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -20,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                readSms();
+                analyzeSms();
             }
         });
 
@@ -55,5 +66,22 @@ public class MainActivity extends AppCompatActivity {
         } else {
             System.out.println("No SMS in inbox");
         }
+    }
+    private void analyzeSms() {
+        readSms(); //todo return list of messages to be put in post request
+        Call<List<Score>> call = RetrofitClient.getInstance().getMyApi().getSentimentData(new Request(1,"en","hello"));
+        call.enqueue(new Callback<List<Score>>() {
+            @Override
+            public void onResponse(Call<List<Score>> call, Response<List<Score>> response) {
+                List<Score> scores = response.body();
+                //todo add logic of computing average the score
+            }
+
+            @Override
+            public void onFailure(Call<List<Score>> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "An error has occured", Toast.LENGTH_LONG).show();
+            }
+
+        });
     }
 }
