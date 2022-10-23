@@ -1,19 +1,21 @@
 package com.example.lifeguard;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.example.lifeguard.Api.Request;
 import com.example.lifeguard.Api.RetrofitClient;
 import com.example.lifeguard.Api.Score;
+import com.google.cloud.language.v1.Document;
+import com.google.cloud.language.v1.LanguageServiceClient;
+import com.google.cloud.language.v1.Sentiment;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +34,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 analyzeSms();
+                try {
+                    googleApi();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -83,5 +90,22 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+    }
+
+    //todo add google api credentials
+    public void googleApi() throws Exception {
+        // Instantiates a client
+        try (LanguageServiceClient language = LanguageServiceClient.create()) {
+
+            // The text to analyze
+            String text = "Hello, world!";
+            Document doc = Document.newBuilder().setContent(text).setType(Document.Type.PLAIN_TEXT).build();
+
+            // Detects the sentiment of the text
+            Sentiment sentiment = language.analyzeSentiment(doc).getDocumentSentiment();
+
+            System.out.printf("Text: %s%n", text);
+            System.out.printf("Sentiment: %s, %s%n", sentiment.getScore(), sentiment.getMagnitude());
+        }
     }
 }
