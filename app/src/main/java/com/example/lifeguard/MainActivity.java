@@ -1,8 +1,10 @@
 package com.example.lifeguard;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.system.Os;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -17,6 +19,11 @@ import com.google.cloud.language.v1.Document;
 import com.google.cloud.language.v1.LanguageServiceClient;
 import com.google.cloud.language.v1.Sentiment;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                analyzeSms();
+                //analyzeSms();
                 try {
                     googleApi();
                 } catch (Exception e) {
@@ -94,6 +101,28 @@ public class MainActivity extends AppCompatActivity {
 
     //todo add google api credentials
     public void googleApi() throws Exception {
+//        final InputStream stream = getApplicationContext().getResources().openRawResource(R.raw.credential);
+//        try {
+//            final GoogleCredentials googleCredentials = serviceAccountCredentials
+//                    .createScoped(Collections.singletonList(StorageScopes.DEVSTORAGE_FULL_CONTROL));
+//            HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(googleCredentials);
+//
+//            final com.google.api.services.storage.Storage myStorage = new com.google.api.services.storage.Storage.Builder(
+//                    new NetHttpTransport(), new JacksonFactory(), requestInitializer).build();
+//
+//
+//            credential.refreshToken();
+//            final String accessToken = credential.getAccessToken();
+//            prefs.edit().putString(PREF_ACCESS_TOKEN, accessToken).apply();
+//            return accessToken;
+//        } catch (IOException e) {
+//            Log.e(TAG, "Failed to obtain access token.", e);
+//        }
+//
+
+        saveToJson();
+        Os.setenv("GOOGLE_APPLICATION_CREDENTIALS",
+                "/data/data/com.example.lifeguard/files/credentials.json", true);
         // Instantiates a client
         try (LanguageServiceClient language = LanguageServiceClient.create()) {
 
@@ -106,6 +135,32 @@ public class MainActivity extends AppCompatActivity {
 
             System.out.printf("Text: %s%n", text);
             System.out.printf("Sentiment: %s, %s%n", sentiment.getScore(), sentiment.getMagnitude());
+        }
+    }
+
+    //probably useless
+    public void saveToJson(){
+        JSONObject json = new JSONObject();
+        JSONObject jsonPar = new JSONObject();
+
+        try {
+            json.put("client_id", "");
+            json.put("project_id", "");
+            json.put("auth_uri", "");
+            json.put("token_uri", "");
+            json.put("auth_provider_x509_cert_url", "");
+            jsonPar.put("installed", json);
+
+            String jsonString = jsonPar.toString();
+            jsonString=jsonString.replaceAll("\\\\","");
+
+            FileOutputStream fos = this.openFileOutput("credentials.json", Context.MODE_PRIVATE);
+            fos.write(jsonString.getBytes());
+            fos.close();
+
+
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
         }
     }
 }
