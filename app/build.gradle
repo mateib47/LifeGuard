@@ -12,7 +12,7 @@ android {
         versionCode 1
         versionName "1.0"
         buildConfigField "String", "GOOGLE_APPLICATION_CREDENTIALS", '"app/src/main/res/raw/service_accont_key_file.json"'
-
+        multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -35,7 +35,7 @@ android {
 }
 
 dependencies {
-
+    implementation 'com.android.support:multidex:2.0.1'
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
