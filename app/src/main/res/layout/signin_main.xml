@@ -24,5 +24,17 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status" />
+
+        <Button
+            android:id="@+id/sign_out_and_disconnect"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sign out" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
