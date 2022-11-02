@@ -3,12 +3,12 @@ package com.example.lifeguard;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -18,6 +18,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 public class SignInActivity extends AppCompatActivity {
@@ -43,6 +44,12 @@ public class SignInActivity extends AppCompatActivity {
                 signIn();
             }
         });
+        ((Button) findViewById(R.id.sign_out_and_disconnect)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                signOut();
+            }
+        });
 
     }
 
@@ -53,40 +60,32 @@ public class SignInActivity extends AppCompatActivity {
 
     ActivityResultLauncher<Intent> someActivityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-                @Override
-                public void onActivityResult(ActivityResult result) {
-                    System.out.println(result.getResultCode());
-                    if (result.getResultCode() == 0) {
-                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
-                        handleSignInResult(task);
-                    }
+            result -> {
+                System.out.println("result code" + result.getResultCode());
+                if (result.getResultCode() == RESULT_OK) {
+                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                    handleSignInResult(task);
                 }
             });
 
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
-        System.out.println(completedTask);
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             System.out.println("signed in");
-            System.out.println(account);
+            System.out.println(account.getDisplayName());
+            updateUI(account);
             switchActivities();
-            //updateUI(account);
-            //go to main page
         } catch (ApiException e) {
-            System.out.println(e.getStatusCode());
-            //Log.w("signInResult:failed code=" + e.getStatusCode());
-            //updateUI(null);
+            System.out.println("Error" + e.getStatusCode());
+            updateUI(null);
         }
     }
 
-    //fixme error code 12500 on login; add info in google api credentials page
     @Override
     protected void onStart() {
         super.onStart();
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        //updateUI(account);
-        //check if account != null => hide the sign-in button, launch your main activity
+        updateUI(account);
     }
 
     private void switchActivities() {
@@ -97,15 +96,22 @@ public class SignInActivity extends AppCompatActivity {
     private void updateUI(@Nullable GoogleSignInAccount account) {
         if (account != null) {
             mStatusTextView.setText("Signed in: " + account.getDisplayName());
-
             findViewById(R.id.sign_in_button).setVisibility(View.GONE);
             findViewById(R.id.sign_out_and_disconnect).setVisibility(View.VISIBLE);
         } else {
             mStatusTextView.setText("Signed out");
-
             findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
             findViewById(R.id.sign_out_and_disconnect).setVisibility(View.GONE);
         }
     }
 
+    private void signOut() {
+        mGoogleSignInClient.signOut()
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        updateUI(null);
+                    }
+                });
+    }
 }
