@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -51,6 +52,13 @@ public class SignInActivity extends AppCompatActivity {
             }
         });
 
+        int REQUEST_CODE_ASK_PERMISSIONS = 123;
+        ActivityCompat.requestPermissions(this, new String[]{"android.permission.READ_SMS, android.permission.ACTIVITY_RECOGNITION"}, REQUEST_CODE_ASK_PERMISSIONS);
+//            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
+//                    != PackageManager.PERMISSION_GRANTED) {
+//                Toast toast = Toast.makeText(getApplicationContext(), "The app needs this permission to run properly...", Toast.LENGTH_LONG);
+//                toast.show();
+//            }
     }
 
     private void signIn() {

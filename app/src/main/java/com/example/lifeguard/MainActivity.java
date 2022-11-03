@@ -3,18 +3,26 @@ package com.example.lifeguard;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.system.Os;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import com.example.lifeguard.Api.Request;
 import com.example.lifeguard.Api.RetrofitClient;
 import com.example.lifeguard.Api.Score;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.data.Bucket;
+import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.cloud.language.v1.Document;
 import com.google.cloud.language.v1.LanguageServiceClient;
 import com.google.cloud.language.v1.Sentiment;
@@ -24,6 +32,9 @@ import org.json.JSONObject;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -52,10 +63,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void readSms() {
-        int REQUEST_CODE_ASK_PERMISSIONS = 123;
-        ActivityCompat.requestPermissions(this, new String[]{"android.permission.READ_SMS"}, REQUEST_CODE_ASK_PERMISSIONS);
-        //Cursor cursor = getContentResolver().query(Uri.parse("content://sms/inbox"), null, null, null, null);
-
         final String[] projection = new String[]{"_id", "address", "body", "date"};
         final Uri uri = Uri.parse("content://sms/sent");
         Cursor cursor = getContentResolver().query(uri, projection,null, null, null);
@@ -81,6 +88,34 @@ public class MainActivity extends AppCompatActivity {
             System.out.println("No SMS in inbox");
         }
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void readFitnessActivity(){
+        ZonedDateTime endTime = LocalDateTime.now().atZone(ZoneId.systemDefault());
+        ZonedDateTime startTime = endTime.minusWeeks(1);
+        DataReadRequest readRequest = new DataReadRequest.Builder()
+                .aggregate(DataType.AGGREGATE_STEP_COUNT_DELTA)
+                .bucketByTime(1, TimeUnit.DAYS)
+                .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(), TimeUnit.SECONDS)
+                .build();
+
+        Fitness.getHistoryClient(this, GoogleSignIn.getAccountForExtension(this, fitnessOptions))
+                .readData(readRequest)
+                .addOnSuccessListener (response -> {
+                    // The aggregate query puts datasets into buckets, so convert to a
+                    // single list of datasets
+                    for (Bucket bucket : response.getBuckets()) {
+                        for (DataSet dataSet : bucket.getDataSets()) {
+                            //dumpDataSet(dataSet);
+                        }
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Log.w(TAG, "There was an error reading data from Google Fit", e));
+
+    }
+    }
+
     private void analyzeSms() {
         readSms(); //todo return list of messages to be put in post request
         Call<List<Score>> call = RetrofitClient.getInstance().getMyApi().getSentimentData(new Request(1,"en","hello"));
