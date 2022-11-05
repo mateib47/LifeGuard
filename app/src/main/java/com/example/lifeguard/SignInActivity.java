@@ -59,6 +59,12 @@ public class SignInActivity extends AppCompatActivity {
 //                Toast toast = Toast.makeText(getApplicationContext(), "The app needs this permission to run properly...", Toast.LENGTH_LONG);
 //                toast.show();
 //            }
+        if (HealthConnectClient.isAvailable(getApplicationContext())) {
+            // Health Connect is available and installed.
+            val healthConnectClient = HealthConnectClient.getOrCreate(context)
+        } else {
+            // ...
+        }
     }
 
     private void signIn() {
