@@ -5,8 +5,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.system.Os;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -17,12 +15,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.lifeguard.Api.Request;
 import com.example.lifeguard.Api.RetrofitClient;
 import com.example.lifeguard.Api.Score;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.fitness.Fitness;
-import com.google.android.gms.fitness.data.Bucket;
-import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.request.DataReadRequest;
+import com.google.cloud.language.v1.AnalyzeSentimentResponse;
 import com.google.cloud.language.v1.Document;
 import com.google.cloud.language.v1.LanguageServiceClient;
 import com.google.cloud.language.v1.Sentiment;
@@ -38,20 +33,25 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import lombok.SneakyThrows;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "Error in main activity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
+            @SneakyThrows
             @Override
             public void onClick(View view) {
                 //analyzeSms();
+                //googleApi();
                 try {
                     googleApi();
                 } catch (Exception e) {
@@ -99,21 +99,19 @@ public class MainActivity extends AppCompatActivity {
                 .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(), TimeUnit.SECONDS)
                 .build();
 
-        Fitness.getHistoryClient(this, GoogleSignIn.getAccountForExtension(this, fitnessOptions))
-                .readData(readRequest)
-                .addOnSuccessListener (response -> {
-                    // The aggregate query puts datasets into buckets, so convert to a
-                    // single list of datasets
-                    for (Bucket bucket : response.getBuckets()) {
-                        for (DataSet dataSet : bucket.getDataSets()) {
-                            //dumpDataSet(dataSet);
-                        }
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Log.w(TAG, "There was an error reading data from Google Fit", e));
-
-    }
+//        Fitness.getHistoryClient(this, GoogleSignIn.getAccountForExtension(this, fitnessOptions))
+//                .readData(readRequest)
+//                .addOnSuccessListener (response -> {
+//                    // The aggregate query puts datasets into buckets, so convert to a
+//                    // single list of datasets
+//                    for (Bucket bucket : response.getBuckets()) {
+//                        for (DataSet dataSet : bucket.getDataSets()) {
+//                            //dumpDataSet(dataSet);
+//                        }
+//                    }
+//                })
+//                .addOnFailureListener(e ->
+//                        Log.w(TAG, "There was an error reading data from Google Fit", e));
     }
 
     private void analyzeSms() {
@@ -136,40 +134,19 @@ public class MainActivity extends AppCompatActivity {
 
     //todo add google api credentials
     public void googleApi() throws Exception {
-//        final InputStream stream = getApplicationContext().getResources().openRawResource(R.raw.credential);
-//        try {
-//            final GoogleCredentials googleCredentials = serviceAccountCredentials
-//                    .createScoped(Collections.singletonList(StorageScopes.DEVSTORAGE_FULL_CONTROL));
-//            HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(googleCredentials);
-//
-//            final com.google.api.services.storage.Storage myStorage = new com.google.api.services.storage.Storage.Builder(
-//                    new NetHttpTransport(), new JacksonFactory(), requestInitializer).build();
-//
-//
-//            credential.refreshToken();
-//            final String accessToken = credential.getAccessToken();
-//            prefs.edit().putString(PREF_ACCESS_TOKEN, accessToken).apply();
-//            return accessToken;
-//        } catch (IOException e) {
-//            Log.e(TAG, "Failed to obtain access token.", e);
-//        }
-//
+            String text = "hello world";
 
-        saveToJson();
-        Os.setenv("GOOGLE_APPLICATION_CREDENTIALS",
-                "/data/data/com.example.lifeguard/files/credentials.json", true);
-        // Instantiates a client
         try (LanguageServiceClient language = LanguageServiceClient.create()) {
-
-            // The text to analyze
-            String text = "Hello, world!";
             Document doc = Document.newBuilder().setContent(text).setType(Document.Type.PLAIN_TEXT).build();
-
-            // Detects the sentiment of the text
-            Sentiment sentiment = language.analyzeSentiment(doc).getDocumentSentiment();
-
-            System.out.printf("Text: %s%n", text);
-            System.out.printf("Sentiment: %s, %s%n", sentiment.getScore(), sentiment.getMagnitude());
+            AnalyzeSentimentResponse response = language.analyzeSentiment(doc);
+            Sentiment sentiment = response.getDocumentSentiment();
+            if (sentiment == null) {
+                System.out.println("No sentiment found");
+            } else {
+                System.out.printf("Sentiment magnitude: %.3f\n", sentiment.getMagnitude());
+                System.out.printf("Sentiment score: %.3f\n", sentiment.getScore());
+            }
+            System.out.println(sentiment);
         }
     }
 
