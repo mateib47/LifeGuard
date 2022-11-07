@@ -51,6 +51,12 @@ public class SignInActivity extends AppCompatActivity {
                 signOut();
             }
         });
+        ((Button) findViewById(R.id.home_btn)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                switchActivities();
+            }
+        });
 
         int REQUEST_CODE_ASK_PERMISSIONS = 123;
         ActivityCompat.requestPermissions(this, new String[]{"android.permission.READ_SMS, android.permission.ACTIVITY_RECOGNITION"}, REQUEST_CODE_ASK_PERMISSIONS);
@@ -117,6 +123,7 @@ public class SignInActivity extends AppCompatActivity {
             mStatusTextView.setText("Signed out");
             findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
             findViewById(R.id.sign_out_and_disconnect).setVisibility(View.GONE);
+            findViewById(R.id.home_btn).setVisibility(View.GONE);
         }
     }
 

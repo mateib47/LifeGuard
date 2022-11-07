@@ -15,8 +15,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.lifeguard.Api.Request;
 import com.example.lifeguard.Api.RetrofitClient;
 import com.example.lifeguard.Api.Score;
-import com.google.android.gms.fitness.data.DataType;
-import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.cloud.language.v1.AnalyzeSentimentResponse;
 import com.google.cloud.language.v1.Document;
 import com.google.cloud.language.v1.LanguageServiceClient;
@@ -93,11 +91,11 @@ public class MainActivity extends AppCompatActivity {
     private void readFitnessActivity(){
         ZonedDateTime endTime = LocalDateTime.now().atZone(ZoneId.systemDefault());
         ZonedDateTime startTime = endTime.minusWeeks(1);
-        DataReadRequest readRequest = new DataReadRequest.Builder()
-                .aggregate(DataType.AGGREGATE_STEP_COUNT_DELTA)
-                .bucketByTime(1, TimeUnit.DAYS)
-                .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(), TimeUnit.SECONDS)
-                .build();
+//        DataReadRequest readRequest = new DataReadRequest.Builder()
+//                .aggregate(DataType.AGGREGATE_STEP_COUNT_DELTA)
+//                .bucketByTime(1, TimeUnit.DAYS)
+//                .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(), TimeUnit.SECONDS)
+//                .build();
 
 //        Fitness.getHistoryClient(this, GoogleSignIn.getAccountForExtension(this, fitnessOptions))
 //                .readData(readRequest)
