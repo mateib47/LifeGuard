@@ -1,15 +1,27 @@
 package com.lifeguard.contact;
 
+import com.lifeguard.person.Person;
+import com.lifeguard.person.PersonRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
 public class ContactService {
    private EmailSender emailSender;
+   private PersonRepository personRepository;
 
     public String sendEmail(ContactRequest contactRequest) {
         boolean isValidEmail = emailSender.validate(contactRequest.getEmail());
+        Optional<Person> person = personRepository.findByEmail(contactRequest.getEmail());
+        if(person.isEmpty()){
+            System.out.println("User's email not found in database");
+            return "fail";
+        }else{
+            //todo use data stored in Person object
+        }
         if (!isValidEmail) {
             throw new IllegalStateException("Email " + contactRequest.getEmail() + " not valid");
         }
