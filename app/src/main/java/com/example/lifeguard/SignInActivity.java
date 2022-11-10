@@ -1,10 +1,13 @@
 package com.example.lifeguard;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -12,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -38,6 +42,7 @@ public class SignInActivity extends AppCompatActivity {
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+        showPhoneStatePermission();
 
         ((SignInButton) findViewById(R.id.sign_in_button)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -57,6 +62,8 @@ public class SignInActivity extends AppCompatActivity {
                 switchActivities();
             }
         });
+
+
 
         int REQUEST_CODE_ASK_PERMISSIONS = 123;
         ActivityCompat.requestPermissions(this, new String[]{"android.permission.READ_SMS, android.permission.ACTIVITY_RECOGNITION"}, REQUEST_CODE_ASK_PERMISSIONS);
@@ -99,6 +106,23 @@ public class SignInActivity extends AppCompatActivity {
         } catch (ApiException e) {
             System.out.println("Error" + e.getStatusCode());
             updateUI(null);
+        }
+    }
+
+    private void showPhoneStatePermission() {
+        int permissionCheck = ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.READ_SMS);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    android.Manifest.permission.READ_SMS)) {
+                //TODO show why is needed
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_SMS}, 225);
+                }
+            }
+        } else {
+            Toast.makeText(this, "Permission (already) Granted!", Toast.LENGTH_SHORT).show();
         }
     }
 

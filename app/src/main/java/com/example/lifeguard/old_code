@@ -1,0 +1,58 @@
+//        Call<List<Score>> call = RetrofitClient.getInstance().getMyApi().getSentimentData(new Request(1, "en", "hello"));
+//        call.enqueue(new Callback<List<Score>>() {
+//            @Override
+//            public void onResponse(Call<List<Score>> call, Response<List<Score>> response) {
+//                List<Score> scores = response.body();
+//                //todo add logic of computing average the score
+//            }
+//
+//            @Override
+//            public void onFailure(Call<List<Score>> call, Throwable t) {
+//                Toast.makeText(getApplicationContext(), "An error has occured", Toast.LENGTH_LONG).show();
+//            }
+//
+//        });
+
+ //todo add google api credentials
+    public void googleApi() throws Exception {
+        String text = "hello world";
+
+        try (LanguageServiceClient language = LanguageServiceClient.create()) {
+            Document doc = Document.newBuilder().setContent(text).setType(Document.Type.PLAIN_TEXT).build();
+            AnalyzeSentimentResponse response = language.analyzeSentiment(doc);
+            Sentiment sentiment = response.getDocumentSentiment();
+            if (sentiment == null) {
+                System.out.println("No sentiment found");
+            } else {
+                System.out.printf("Sentiment magnitude: %.3f\n", sentiment.getMagnitude());
+                System.out.printf("Sentiment score: %.3f\n", sentiment.getScore());
+            }
+            System.out.println(sentiment);
+        }
+    }
+
+        //probably useless
+        public void saveToJson() {
+            JSONObject json = new JSONObject();
+            JSONObject jsonPar = new JSONObject();
+
+            try {
+                json.put("client_id", "");
+                json.put("project_id", "");
+                json.put("auth_uri", "");
+                json.put("token_uri", "");
+                json.put("auth_provider_x509_cert_url", "");
+                jsonPar.put("installed", json);
+
+                String jsonString = jsonPar.toString();
+                jsonString = jsonString.replaceAll("\\\\", "");
+
+                FileOutputStream fos = this.openFileOutput("credentials.json", Context.MODE_PRIVATE);
+                fos.write(jsonString.getBytes());
+                fos.close();
+
+
+            } catch (IOException | JSONException e) {
+                e.printStackTrace();
+            }
+        }
