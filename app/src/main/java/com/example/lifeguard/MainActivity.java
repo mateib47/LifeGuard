@@ -102,7 +102,17 @@ public class MainActivity extends AppCompatActivity {
     private void analyzeSms() {
         System.out.println("Analyzing sms");
         List<String> messages = readSms(); //todo return list of messages to be put in post request
+//      List<String> suicide_messages = {};
         int score = ibmApi(messages);
+
+//        for (int message = 0; message < messages.size(); message++) {
+//            for (int word = 0; word < suicide_messages.size(); word++) {
+//               if (message == word)
+//                    score += 1;
+//            }
+//        }
+
+       //todo add score of sms detection to the total analysis score
     }
 
 
