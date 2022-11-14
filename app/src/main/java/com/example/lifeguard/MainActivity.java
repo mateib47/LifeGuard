@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -17,22 +18,27 @@ import com.ibm.watson.natural_language_understanding.v1.model.AnalysisResults;
 import com.ibm.watson.natural_language_understanding.v1.model.AnalyzeOptions;
 import com.ibm.watson.natural_language_understanding.v1.model.EmotionOptions;
 import com.ibm.watson.natural_language_understanding.v1.model.Features;
+import com.ibm.watson.natural_language_understanding.v1.model.TargetedEmotionResults;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import lombok.SneakyThrows;
 
 public class MainActivity extends AppCompatActivity {
+    private TextView resultTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        resultTextView = (TextView) findViewById(R.id.resultText);
+
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
             @SneakyThrows
             @Override
@@ -52,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         if (cursor.moveToFirst()) {
             do {
                 String msgData = "";
+                String msg = "";
                 boolean good = false;
                 for (int idx = 0; idx < cursor.getColumnCount(); idx++) {
                     msgData += " " + cursor.getColumnName(idx) + ":" + cursor.getString(idx) + "\n";
@@ -61,16 +68,24 @@ public class MainActivity extends AppCompatActivity {
                         if (date > System.currentTimeMillis() - TimeUnit.DAYS.toMillis(5)) {
                             good = true;
                         }
+                    } else if (cursor.getColumnName(idx).equals("body")) {
+                        msg = cursor.getString(idx);
                     }
                 }
                 if (good) {
+//                    String noQuotes = msgData.replaceAll("^\"|\"$", "");
                     System.out.println("MsgData: " + msgData);
-                    messages.add(msgData);
+                    System.out.println(msg);
+//                    Gson gson = new Gson();
+//                    Type type = new TypeToken<Map<String, String>>(){}.getType();
+//                    Map<String, String> myMap = gson.fromJson(msgData, type);
+                    messages.add(msg);
                 }
             } while (cursor.moveToNext());
         } else {
             System.out.println("No SMS in inbox");
         }
+        System.out.println("messages " + messages);
         return messages;
     }
 
@@ -101,9 +116,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void analyzeSms() {
         System.out.println("Analyzing sms");
-        List<String> messages = readSms(); //todo return list of messages to be put in post request
+        List<String> messages = readSms();
 //      List<String> suicide_messages = {};
-        int score = ibmApi(messages);
+        double score = ibmApi(messages);
+        if(score == -1){
+            resultTextView.setText("Error in computing the score");
+        }else{
+            resultTextView.setText("Sadness average score " + score);
+        }
 
 //        for (int message = 0; message < messages.size(); message++) {
 //            for (int word = 0; word < suicide_messages.size(); word++) {
@@ -112,25 +132,25 @@ public class MainActivity extends AppCompatActivity {
 //            }
 //        }
 
-       //todo add score of sms detection to the total analysis score
+        //todo add score of sms detection to the total analysis score
     }
 
 
-    public int ibmApi(List<String> messages) {
-        int SDK_INT = android.os.Build.VERSION.SDK_INT;
+    public double ibmApi(List<String> messages) {
+        System.out.println(messages);
+        int SDK_INT = Build.VERSION.SDK_INT;
         if (SDK_INT > 8) {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
                     .permitAll().build();
             StrictMode.setThreadPolicy(policy);
-            IamAuthenticator authenticator = new IamAuthenticator(String.valueOf(R.string.ibm_api));
+            IamAuthenticator authenticator = new IamAuthenticator(getResources().getString(R.string.ibm_api));
             NaturalLanguageUnderstanding naturalLanguageUnderstanding = new NaturalLanguageUnderstanding("2022-04-07", authenticator);
-            naturalLanguageUnderstanding.setServiceUrl(String.valueOf(R.string.ibm_url));
-
+            naturalLanguageUnderstanding.setServiceUrl(getResources().getString(R.string.ibm_url));
             List<String> targets = new ArrayList<>();
-            // todo add meaningful targets
-            targets.add("life");
-            targets.add("me");
-
+            /* Ref: https://www.sciencedirect.com/science/article/pii/S2214782915000160#:~:text=%E2%80%9Csuicidal%3B%20suicide%3B%20kill,to%20sleep%20forever%E2%80%9D.
+            * https://www.sciencedirect.com/topics/computer-science/suicidal-ideation
+            * */
+            targets.addAll(Arrays.asList("life", "suicidal", "suicide", "kill", "kill myself", "my suicide note", "my suicide letter", "end my life", "never wake up", "can't go on", "not worth living", "ready to jump", "sleep forever", "want to die", "be dead", "better off without me", "better off dead", "suicide plan", "suicide pact", "tired of living", "don't want to be here", "die alone", "go to sleep forever"));
             EmotionOptions emotion = new EmotionOptions.Builder()
                     .targets(targets)
                     .build();
@@ -139,20 +159,29 @@ public class MainActivity extends AppCompatActivity {
                     .emotion(emotion)
                     .build();
 
+            double sadnessAverage = 0;
+            int nrEntries = 0;
             for (String msg : messages) {
-                AnalyzeOptions parameters = new AnalyzeOptions.Builder()
-                        .text(msg)
-                        .features(features)
-                        .build();
+                if (msg.length() > 8) {
+                    AnalyzeOptions parameters = new AnalyzeOptions.Builder()
+                            .text(msg)
+                            .features(features)
+                            .build();
 
-                AnalysisResults response = naturalLanguageUnderstanding
-                        .analyze(parameters)
-                        .execute()
-                        .getResult();
-                System.out.println(response);
+                    AnalysisResults response = naturalLanguageUnderstanding
+                            .analyze(parameters)
+                            .execute()
+                            .getResult();
+                    for (TargetedEmotionResults i : response.getEmotion().getTargets()) {
+                        sadnessAverage += i.getEmotion().getSadness();
+
+                        nrEntries++;
+                    }
+                    //System.out.println(response.getEmotion().getTargets().get(0).getEmotion().getSadness());
+                }
             }
-
+            return sadnessAverage / nrEntries;
         }
-        return 0;
+        return -1;
     }
 }

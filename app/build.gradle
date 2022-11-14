@@ -57,6 +57,8 @@ dependencies {
     implementation 'com.ibm.watson.developer_cloud:java-sdk:3.9.1'
     implementation 'com.github.kittinunf.fuel:fuel-android:1.10.0'
     implementation 'com.ibm.watson:ibm-watson:10.1.0'
+    implementation 'com.google.code.gson:gson:2.10'
+
 
 }
 //apply plugin: 'com.google.gms.google-services'
