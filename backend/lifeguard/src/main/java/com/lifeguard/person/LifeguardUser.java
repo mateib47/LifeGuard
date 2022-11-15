@@ -13,7 +13,7 @@ import java.util.List;
 @EqualsAndHashCode
 @NoArgsConstructor
 @Entity
-public class Person {
+public class LifeguardUser {
     @SequenceGenerator(name = "person_seq",
             sequenceName = "person_seq",
             allocationSize = 1)
@@ -27,7 +27,7 @@ public class Person {
     private String email;
     private String phoneNumber;
 
-    public Person(String firstName, String lastName, String email, String phoneNumber) {
+    public LifeguardUser(String firstName, String lastName, String email, String phoneNumber) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;

@@ -7,9 +7,9 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class Request {
-    private int id;
-    private String language;
-    private String text;
-
+public class User {
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String phoneNumber;
 }

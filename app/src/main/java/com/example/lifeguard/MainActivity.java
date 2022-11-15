@@ -172,9 +172,9 @@ public class MainActivity extends AppCompatActivity {
                             .analyze(parameters)
                             .execute()
                             .getResult();
+                    System.out.println(response);
                     for (TargetedEmotionResults i : response.getEmotion().getTargets()) {
                         sadnessAverage += i.getEmotion().getSadness();
-
                         nrEntries++;
                     }
                     //System.out.println(response.getEmotion().getTargets().get(0).getEmotion().getSadness());
