@@ -2,10 +2,12 @@ package com.lifeguard.contact;
 
 import com.lifeguard.person.LifeguardUser;
 import com.lifeguard.person.PersonRepository;
-import lombok.AllArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+
+import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor

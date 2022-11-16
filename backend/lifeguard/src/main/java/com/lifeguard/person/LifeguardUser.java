@@ -1,11 +1,13 @@
 package com.lifeguard.person;
 
+import javax.persistence.*;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -26,11 +28,14 @@ public class LifeguardUser {
     private String lastName;
     private String email;
     private String phoneNumber;
+    @ElementCollection
+    private List<String> contactEmails;
 
-    public LifeguardUser(String firstName, String lastName, String email, String phoneNumber) {
+    public LifeguardUser(String firstName, String lastName, String email, String phoneNumber, ArrayList<String> contactEmails) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.contactEmails = contactEmails;
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(path = "api/v1/person")
+@RequestMapping(path = "api/v1/user")
 @AllArgsConstructor
 public class PersonController {
     private PersonService personService;

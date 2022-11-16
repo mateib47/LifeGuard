@@ -18,6 +18,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.lifeguard.Api.RetrofitClient;
+import com.example.lifeguard.Api.User;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -26,6 +27,10 @@ import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class SignInActivity extends AppCompatActivity {
     GoogleSignInClient mGoogleSignInClient;
@@ -65,7 +70,6 @@ public class SignInActivity extends AppCompatActivity {
         });
 
 
-
         int REQUEST_CODE_ASK_PERMISSIONS = 123;
         ActivityCompat.requestPermissions(this, new String[]{"android.permission.READ_SMS, android.permission.ACTIVITY_RECOGNITION"}, REQUEST_CODE_ASK_PERMISSIONS);
 //            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
@@ -101,7 +105,7 @@ public class SignInActivity extends AppCompatActivity {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             if (account != null)
-                RetrofitClient.getInstance().addUser(this,account.getGivenName(), account.getFamilyName(),account.getEmail(), "12345678");
+                addUser(account.getGivenName(), account.getFamilyName(), account.getEmail(), "12345678");
             System.out.println("signed in");
             System.out.println(account.getDisplayName());
             updateUI(account);
@@ -162,5 +166,28 @@ public class SignInActivity extends AppCompatActivity {
                         updateUI(null);
                     }
                 });
+    }
+
+    public void addUser(String firstName,
+                        String lastName,
+                        String email,
+                        String phoneNumber) {
+        User user = new User(firstName, lastName, email, phoneNumber);
+        Call<Long> call = RetrofitClient.getInstance().getMyApi().addUser(user);
+        call.enqueue(new Callback<Long>() {
+            @Override
+            public void onResponse(Call<Long> call, Response<Long> response) {
+                Toast.makeText(getApplicationContext(), "Data added to API", Toast.LENGTH_SHORT).show();
+                Long responseFromAPI = response.body();
+                String responseString = "Response Code : " + response.code() + "\nId : " + responseFromAPI.toString();
+                Toast.makeText(getApplicationContext(), responseString, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Call<Long> call, Throwable t) {
+                System.out.println(t);
+                Toast.makeText(getApplicationContext(), "Error in adding user", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
