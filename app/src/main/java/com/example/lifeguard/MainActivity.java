@@ -12,6 +12,13 @@ import android.widget.TextView;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptionsExtension;
+import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.data.Bucket;
+import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.request.DataReadRequest;
 import com.ibm.cloud.sdk.core.security.IamAuthenticator;
 import com.ibm.watson.natural_language_understanding.v1.NaturalLanguageUnderstanding;
 import com.ibm.watson.natural_language_understanding.v1.model.AnalysisResults;
@@ -91,27 +98,25 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void readFitnessActivity() {
+        GoogleSignInOptionsExtension fitnessOptions = null;
         ZonedDateTime endTime = LocalDateTime.now().atZone(ZoneId.systemDefault());
         ZonedDateTime startTime = endTime.minusWeeks(1);
-//        DataReadRequest readRequest = new DataReadRequest.Builder()
-//                .aggregate(DataType.AGGREGATE_STEP_COUNT_DELTA)
-//                .bucketByTime(1, TimeUnit.DAYS)
-//                .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(), TimeUnit.SECONDS)
-//                .build();
-
-//        Fitness.getHistoryClient(this, GoogleSignIn.getAccountForExtension(this, fitnessOptions))
-//                .readData(readRequest)
-//                .addOnSuccessListener (response -> {
-//                    // The aggregate query puts datasets into buckets, so convert to a
-//                    // single list of datasets
-//                    for (Bucket bucket : response.getBuckets()) {
-//                        for (DataSet dataSet : bucket.getDataSets()) {
-//                            //dumpDataSet(dataSet);
-//                        }
-//                    }
-//                })
-//                .addOnFailureListener(e ->
-//                        Log.w(TAG, "There was an error reading data from Google Fit", e));
+        DataReadRequest readRequest = new DataReadRequest.Builder()
+                .aggregate(DataType.AGGREGATE_STEP_COUNT_DELTA)
+                .bucketByTime(1, TimeUnit.DAYS)
+                .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(), TimeUnit.SECONDS)
+                .build();
+        Fitness.getHistoryClient(this, GoogleSignIn.getAccountForExtension(this, fitnessOptions))
+                .readData(readRequest)
+                .addOnSuccessListener (response -> {
+                    for (Bucket bucket : response.getBuckets()) {
+                        for (DataSet dataSet : bucket.getDataSets()) {
+                            //dumpDataSet(dataSet);
+                        }
+                    }
+                })
+                .addOnFailureListener(e ->
+                        System.out.println("error in google fit"));
     }
 
     private void analyzeSms() {
