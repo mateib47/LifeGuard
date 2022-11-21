@@ -25,8 +25,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+
+import java.util.Arrays;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -42,9 +45,10 @@ public class SignInActivity extends AppCompatActivity {
         setContentView(R.layout.signin_main);
         mStatusTextView = findViewById(R.id.status);
 
-
+        //todo add all scopes
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
+                .requestScopes(new Scope("https://www.googleapis.com/auth/fitness.activity.read"))
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
@@ -172,7 +176,7 @@ public class SignInActivity extends AppCompatActivity {
                         String lastName,
                         String email,
                         String phoneNumber) {
-        User user = new User(firstName, lastName, email, phoneNumber);
+        User user = new User(firstName, lastName, email, phoneNumber, Arrays.asList("friend@mail.com", "mom@mail.com"));
         Call<Long> call = RetrofitClient.getInstance().getMyApi().addUser(user);
         call.enqueue(new Callback<Long>() {
             @Override

@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -16,9 +17,14 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptionsExtension;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.data.Bucket;
+import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
+import com.google.android.gms.fitness.result.DataReadResponse;
+import com.google.android.gms.tasks.Task;
 import com.ibm.cloud.sdk.core.security.IamAuthenticator;
 import com.ibm.watson.natural_language_understanding.v1.NaturalLanguageUnderstanding;
 import com.ibm.watson.natural_language_understanding.v1.model.AnalysisResults;
@@ -39,6 +45,7 @@ import lombok.SneakyThrows;
 
 public class MainActivity extends AppCompatActivity {
     private TextView resultTextView;
+    private String TAG = "mainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,10 +54,12 @@ public class MainActivity extends AppCompatActivity {
         resultTextView = (TextView) findViewById(R.id.resultText);
 
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @SneakyThrows
             @Override
             public void onClick(View view) {
                 analyzeSms();
+                readFitnessActivity();
             }
         });
 
@@ -101,22 +110,46 @@ public class MainActivity extends AppCompatActivity {
         GoogleSignInOptionsExtension fitnessOptions = null;
         ZonedDateTime endTime = LocalDateTime.now().atZone(ZoneId.systemDefault());
         ZonedDateTime startTime = endTime.minusWeeks(1);
-        DataReadRequest readRequest = new DataReadRequest.Builder()
-                .aggregate(DataType.AGGREGATE_STEP_COUNT_DELTA)
-                .bucketByTime(1, TimeUnit.DAYS)
-                .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(), TimeUnit.SECONDS)
+        DataSource ESTIMATED_STEP_DELTAS = new DataSource.Builder()
+                .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
+                .setType(DataSource.TYPE_DERIVED)
+                .setStreamName("estimated_steps")
+                .setAppPackageName("com.google.android.gms")
                 .build();
-        Fitness.getHistoryClient(this, GoogleSignIn.getAccountForExtension(this, fitnessOptions))
-                .readData(readRequest)
-                .addOnSuccessListener (response -> {
+
+        DataReadRequest readRequest = new DataReadRequest.Builder()
+                .aggregate(ESTIMATED_STEP_DELTAS, DataType.AGGREGATE_STEP_COUNT_DELTA)
+                .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
+                .aggregate(DataType.TYPE_CALORIES_EXPENDED, DataType.AGGREGATE_CALORIES_EXPENDED)
+                .aggregate(DataType.TYPE_ACTIVITY_SEGMENT, DataType.AGGREGATE_ACTIVITY_SUMMARY)
+                .bucketByTime(1, TimeUnit.DAYS)
+                .setTimeRange(startTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(), TimeUnit.MILLISECONDS)
+                .build();
+        Task<DataReadResponse> result = Fitness.getHistoryClient(getApplicationContext(),
+                GoogleSignIn.getLastSignedInAccount(getApplicationContext())).readData(readRequest)
+                .addOnSuccessListener(response -> {
                     for (Bucket bucket : response.getBuckets()) {
                         for (DataSet dataSet : bucket.getDataSets()) {
-                            //dumpDataSet(dataSet);
+                            dumpDataSet(dataSet);
                         }
                     }
                 })
                 .addOnFailureListener(e ->
-                        System.out.println("error in google fit"));
+                        System.out.println("error in google fit" + e));
+
+    }
+
+    private void dumpDataSet(DataSet dataSet) {
+        Log.i(TAG, "Data returned for Data type: ${dataSet.dataType.name}");
+        for (DataPoint dp : dataSet.getDataPoints()) {
+            Log.i(TAG, "Data point:");
+            Log.i(TAG, "\tType: ${dp.dataType.name}");
+            Log.i(TAG, "\tStart: ${dp.getStartTimeString()}");
+            Log.i(TAG, "\tEnd: ${dp.getEndTimeString()}");
+            for (Field field : dp.getDataType().getFields()) {
+                Log.i(TAG, "\tField: ${field.name.toString()} Value: ${dp.getValue(field)}");
+            }
+        }
     }
 
     private void analyzeSms() {
@@ -124,9 +157,9 @@ public class MainActivity extends AppCompatActivity {
         List<String> messages = readSms();
 //      List<String> suicide_messages = {};
         double score = ibmApi(messages);
-        if(score == -1){
+        if (score == -1) {
             resultTextView.setText("Error in computing the score");
-        }else{
+        } else {
             resultTextView.setText("Sadness average score " + score);
         }
 
@@ -153,8 +186,8 @@ public class MainActivity extends AppCompatActivity {
             naturalLanguageUnderstanding.setServiceUrl(getResources().getString(R.string.ibm_url));
             List<String> targets = new ArrayList<>();
             /* Ref: https://www.sciencedirect.com/science/article/pii/S2214782915000160#:~:text=%E2%80%9Csuicidal%3B%20suicide%3B%20kill,to%20sleep%20forever%E2%80%9D.
-            * https://www.sciencedirect.com/topics/computer-science/suicidal-ideation
-            * */
+             * https://www.sciencedirect.com/topics/computer-science/suicidal-ideation
+             * */
             targets.addAll(Arrays.asList("life", "suicidal", "suicide", "kill", "kill myself", "my suicide note", "my suicide letter", "end my life", "never wake up", "can't go on", "not worth living", "ready to jump", "sleep forever", "want to die", "be dead", "better off without me", "better off dead", "suicide plan", "suicide pact", "tired of living", "don't want to be here", "die alone", "go to sleep forever"));
             EmotionOptions emotion = new EmotionOptions.Builder()
                     .targets(targets)
