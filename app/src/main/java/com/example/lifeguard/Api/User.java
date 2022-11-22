@@ -1,7 +1,5 @@
 package com.example.lifeguard.Api;
 
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,5 +12,5 @@ public class User {
     private String lastName;
     private String email;
     private String phoneNumber;
-    private List<String> contactEmails;
+//    private List<String> contactEmails;
 }

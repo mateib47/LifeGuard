@@ -18,6 +18,7 @@ public class PersonService {
                     personRequest.getLastName(),
                     personRequest.getEmail(),
                     personRequest.getPhoneNumber());
+//                    , personRequest.getContactEmails());
             personRepository.save(person);
             return person.getId();
         }else{

@@ -7,9 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Getter
 @Setter
 @EqualsAndHashCode
@@ -28,14 +25,14 @@ public class LifeguardUser {
     private String lastName;
     private String email;
     private String phoneNumber;
-    @ElementCollection
-    private List<String> contactEmails;
+//    @ElementCollection
+//    private List<String> contactEmails;
 
-    public LifeguardUser(String firstName, String lastName, String email, String phoneNumber, ArrayList<String> contactEmails) {
+    public LifeguardUser(String firstName, String lastName, String email, String phoneNumber) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.phoneNumber = phoneNumber;
-        this.contactEmails = contactEmails;
+//        this.contactEmails = contactEmails;
     }
 }

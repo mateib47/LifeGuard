@@ -1,9 +1,11 @@
 package com.example.lifeguard;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -29,8 +31,6 @@ import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
-import java.util.Arrays;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -48,11 +48,13 @@ public class SignInActivity extends AppCompatActivity {
         //todo add all scopes
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
-                .requestScopes(new Scope("https://www.googleapis.com/auth/fitness.activity.read"))
+                .requestScopes(new Scope("https://www.googleapis.com/auth/fitness.activity.read"),
+                        new Scope("https://www.googleapis.com/auth/user.phonenumbers.read"))
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-        showPhoneStatePermission();
+        showPermission(android.Manifest.permission.READ_SMS);
+        showPermission(android.Manifest.permission.READ_PHONE_STATE);
 
         ((SignInButton) findViewById(R.id.sign_in_button)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -108,8 +110,20 @@ public class SignInActivity extends AppCompatActivity {
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            TelephonyManager tMgr = (TelephonyManager) getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            String mPhoneNumber = tMgr.getLine1Number();
             if (account != null)
-                addUser(account.getGivenName(), account.getFamilyName(), account.getEmail(), "12345678");
+                addUser(account.getGivenName(), account.getFamilyName(), account.getEmail(), mPhoneNumber);
             System.out.println("signed in");
             System.out.println(account.getDisplayName());
             updateUI(account);
@@ -120,16 +134,16 @@ public class SignInActivity extends AppCompatActivity {
         }
     }
 
-    private void showPhoneStatePermission() {
+    private void showPermission(String permission) {
         int permissionCheck = ContextCompat.checkSelfPermission(
-                this, android.Manifest.permission.READ_SMS);
+                this, permission);
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    android.Manifest.permission.READ_SMS)) {
+                    permission)) {
                 //TODO show why is needed
             } else {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_SMS}, 225);
+                    ActivityCompat.requestPermissions(this, new String[]{permission}, 225);
                 }
             }
         } else {
@@ -176,7 +190,7 @@ public class SignInActivity extends AppCompatActivity {
                         String lastName,
                         String email,
                         String phoneNumber) {
-        User user = new User(firstName, lastName, email, phoneNumber, Arrays.asList("friend@mail.com", "mom@mail.com"));
+        User user = new User(firstName, lastName, email, phoneNumber);
         Call<Long> call = RetrofitClient.getInstance().getMyApi().addUser(user);
         call.enqueue(new Callback<Long>() {
             @Override
