@@ -1,5 +1,9 @@
 package com.example.lifeguard;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -161,7 +165,11 @@ public class MainActivity extends AppCompatActivity {
             resultTextView.setText("Error in computing the score");
         } else {
             resultTextView.setText("Sadness average score " + score);
+            if (score > 0.5) {
+                //actuate
+            }
         }
+        sendNotification(1);
 
 //        for (int message = 0; message < messages.size(); message++) {
 //            for (int word = 0; word < suicide_messages.size(); word++) {
@@ -171,6 +179,18 @@ public class MainActivity extends AppCompatActivity {
 //        }
 
         //todo add score of sms detection to the total analysis score
+    }
+
+    //send notification after an amount of time to make sure user is ok
+    public void sendNotification(int multiplier) {
+        Intent notificationIntent = new Intent(this, ShowNotification.class);
+        PendingIntent contentIntent = PendingIntent.getService(this, 0, notificationIntent,
+                PendingIntent.FLAG_CANCEL_CURRENT);
+
+        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        am.cancel(contentIntent);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis()
+                + AlarmManager.INTERVAL_FIFTEEN_MINUTES * multiplier, AlarmManager.INTERVAL_FIFTEEN_MINUTES * multiplier, contentIntent);
     }
 
 
