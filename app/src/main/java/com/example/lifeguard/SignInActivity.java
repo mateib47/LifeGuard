@@ -49,7 +49,9 @@ public class SignInActivity extends AppCompatActivity {
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestScopes(new Scope("https://www.googleapis.com/auth/fitness.activity.read"),
-                        new Scope("https://www.googleapis.com/auth/user.phonenumbers.read"))
+                        new Scope("https://www.googleapis.com/auth/user.phonenumbers.read"),
+                        new Scope("https://www.googleapis.com/auth/fitness.location.read"),
+                        new Scope("https://www.googleapis.com/auth/fitness.nutrition.read"))
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);

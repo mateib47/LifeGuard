@@ -18,7 +18,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptionsExtension;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
@@ -43,6 +43,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import lombok.SneakyThrows;
@@ -58,11 +59,16 @@ public class MainActivity extends AppCompatActivity {
         resultTextView = (TextView) findViewById(R.id.resultText);
 
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
             @SneakyThrows
             @Override
             public void onClick(View view) {
                 analyzeSms();
+            }
+        });
+        ((Button) findViewById(R.id.button2)).setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onClick(View view) {
                 readFitnessActivity();
             }
         });
@@ -111,7 +117,20 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void readFitnessActivity() {
-        GoogleSignInOptionsExtension fitnessOptions = null;
+        System.out.println("Reading fitness activity");
+
+        if (!GoogleSignIn.hasPermissions(
+                GoogleSignIn.getLastSignedInAccount(this),
+                new Scope("https://www.googleapis.com/auth/fitness.activity.read"))) {
+            GoogleSignIn.requestPermissions(
+                    MainActivity.this,
+                    123,
+                    GoogleSignIn.getLastSignedInAccount(this),
+                    new Scope("https://www.googleapis.com/auth/fitness.activity.read"));
+        }else{
+            System.out.println("Permission already granted");
+        }
+
         ZonedDateTime endTime = LocalDateTime.now().atZone(ZoneId.systemDefault());
         ZonedDateTime startTime = endTime.minusWeeks(1);
         DataSource ESTIMATED_STEP_DELTAS = new DataSource.Builder()
@@ -130,8 +149,9 @@ public class MainActivity extends AppCompatActivity {
                 .setTimeRange(startTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(), TimeUnit.MILLISECONDS)
                 .build();
         Task<DataReadResponse> result = Fitness.getHistoryClient(getApplicationContext(),
-                GoogleSignIn.getLastSignedInAccount(getApplicationContext())).readData(readRequest)
+                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(getApplicationContext()))).readData(readRequest)
                 .addOnSuccessListener(response -> {
+                    System.out.println("Success");
                     for (Bucket bucket : response.getBuckets()) {
                         for (DataSet dataSet : bucket.getDataSets()) {
                             dumpDataSet(dataSet);
@@ -140,10 +160,12 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e ->
                         System.out.println("error in google fit" + e));
+        System.out.println(result);
 
     }
 
     private void dumpDataSet(DataSet dataSet) {
+        System.out.println("printing data set");
         Log.i(TAG, "Data returned for Data type: ${dataSet.dataType.name}");
         for (DataPoint dp : dataSet.getDataPoints()) {
             Log.i(TAG, "Data point:");
@@ -152,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "\tEnd: ${dp.getEndTimeString()}");
             for (Field field : dp.getDataType().getFields()) {
                 Log.i(TAG, "\tField: ${field.name.toString()} Value: ${dp.getValue(field)}");
+                System.out.println(dp.getValue(field));
             }
         }
     }
