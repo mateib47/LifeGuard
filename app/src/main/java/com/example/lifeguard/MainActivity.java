@@ -23,12 +23,9 @@ import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
-import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
-import com.google.android.gms.fitness.result.DataReadResponse;
-import com.google.android.gms.tasks.Task;
 import com.ibm.cloud.sdk.core.security.IamAuthenticator;
 import com.ibm.watson.natural_language_understanding.v1.NaturalLanguageUnderstanding;
 import com.ibm.watson.natural_language_understanding.v1.model.AnalysisResults;
@@ -127,56 +124,59 @@ public class MainActivity extends AppCompatActivity {
                     123,
                     GoogleSignIn.getLastSignedInAccount(this),
                     new Scope("https://www.googleapis.com/auth/fitness.activity.read"));
-        }else{
+        } else {
             System.out.println("Permission already granted");
         }
-
         ZonedDateTime endTime = LocalDateTime.now().atZone(ZoneId.systemDefault());
-        ZonedDateTime startTime = endTime.minusWeeks(1);
-        DataSource ESTIMATED_STEP_DELTAS = new DataSource.Builder()
-                .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
-                .setType(DataSource.TYPE_DERIVED)
-                .setStreamName("estimated_steps")
-                .setAppPackageName("com.google.android.gms")
-                .build();
-
-        DataReadRequest readRequest = new DataReadRequest.Builder()
-                .aggregate(ESTIMATED_STEP_DELTAS, DataType.AGGREGATE_STEP_COUNT_DELTA)
-                .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
-                .aggregate(DataType.TYPE_CALORIES_EXPENDED, DataType.AGGREGATE_CALORIES_EXPENDED)
-                .aggregate(DataType.TYPE_ACTIVITY_SEGMENT, DataType.AGGREGATE_ACTIVITY_SUMMARY)
-                .bucketByTime(1, TimeUnit.DAYS)
+        ZonedDateTime startTime = endTime.minusYears(1);
+        DataReadRequest request = new DataReadRequest.Builder()
+                .read(DataType.TYPE_HEART_POINTS)
+                .bucketByTime(7, TimeUnit.DAYS)
                 .setTimeRange(startTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(), TimeUnit.MILLISECONDS)
                 .build();
-        Task<DataReadResponse> result = Fitness.getHistoryClient(getApplicationContext(),
-                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(getApplicationContext()))).readData(readRequest)
-                .addOnSuccessListener(response -> {
-                    System.out.println("Success");
+
+
+        Fitness.getHistoryClient(getApplicationContext(),
+                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(getApplicationContext())))
+                .readData(request)
+                .addOnSuccessListener(response ->{
                     for (Bucket bucket : response.getBuckets()) {
+                        System.out.println("bucket");
                         for (DataSet dataSet : bucket.getDataSets()) {
                             dumpDataSet(dataSet);
                         }
                     }
-                })
-                .addOnFailureListener(e ->
-                        System.out.println("error in google fit" + e));
-        System.out.println(result);
+//                {
+//                    Optional<DataSet> heartPointsSet = response.getDataSets().stream().findFirst();
+//                    int count = 0;
+//                    if (heartPointsSet.isPresent()) {
+//                        int totalHeartPoints = 0;
+//                        for (DataPoint dp : heartPointsSet.get().getDataPoints()) {
+//                            //if((int) dp.getValue(Field.FIELD_INTENSITY).asFloat() > 2)
+//                                count++;
+//                            totalHeartPoints += (int) dp.getValue(Field.FIELD_INTENSITY).asFloat();
+//                            System.out.println(dp.getValue(Field.FIELD_INTENSITY));
+//                        }
+//                        System.out.println("Hearth points" + totalHeartPoints);
+//                        System.out.println(count);
+//                        Log.i(TAG, "Total heart points: $totalHeartPoints");
+//                    }
+                });
 
     }
-
+    // todo calculate the distribution of the weeks
     private void dumpDataSet(DataSet dataSet) {
+        int totalHeartPoints = 0;
         System.out.println("printing data set");
         Log.i(TAG, "Data returned for Data type: ${dataSet.dataType.name}");
         for (DataPoint dp : dataSet.getDataPoints()) {
-            Log.i(TAG, "Data point:");
-            Log.i(TAG, "\tType: ${dp.dataType.name}");
-            Log.i(TAG, "\tStart: ${dp.getStartTimeString()}");
-            Log.i(TAG, "\tEnd: ${dp.getEndTimeString()}");
             for (Field field : dp.getDataType().getFields()) {
-                Log.i(TAG, "\tField: ${field.name.toString()} Value: ${dp.getValue(field)}");
-                System.out.println(dp.getValue(field));
+                //count++;
+                totalHeartPoints += (int) dp.getValue(Field.FIELD_INTENSITY).asFloat();
+                System.out.println(dp.getValue(Field.FIELD_INTENSITY));
             }
         }
+        System.out.println("Total points "+ totalHeartPoints);
     }
 
     private void analyzeSms() {
