@@ -166,17 +166,23 @@ public class MainActivity extends AppCompatActivity {
     }
     // todo calculate the distribution of the weeks
     private void dumpDataSet(DataSet dataSet) {
+        List <Integer> weeks = new ArrayList<>();
         int totalHeartPoints = 0;
         System.out.println("printing data set");
         Log.i(TAG, "Data returned for Data type: ${dataSet.dataType.name}");
         for (DataPoint dp : dataSet.getDataPoints()) {
             for (Field field : dp.getDataType().getFields()) {
-                //count++;
                 totalHeartPoints += (int) dp.getValue(Field.FIELD_INTENSITY).asFloat();
+                weeks.add((int) dp.getValue(Field.FIELD_INTENSITY).asFloat());
                 System.out.println(dp.getValue(Field.FIELD_INTENSITY));
             }
         }
         System.out.println("Total points "+ totalHeartPoints);
+        double[] stats = calculateSD(weeks);
+        System.out.println("Standard deviation " + stats[1]);
+        if (weeks.get(weeks.size()-1) < stats[0] - stats[1]){
+            //todo actuate
+        }
     }
 
     private void analyzeSms() {
@@ -264,5 +270,20 @@ public class MainActivity extends AppCompatActivity {
             return sadnessAverage / nrEntries;
         }
         return -1;
+    }
+
+    public double[] calculateSD(List numArray)
+    {
+        int sum = 0, standardDeviation = 0;
+        int length = numArray.size();
+        for(Object num : numArray) {
+            sum += (int) num;
+        }
+        double mean = sum/length;
+        for(Object num: numArray) {
+            standardDeviation += Math.pow((int) num - mean, 2);
+        }
+        double[] stats = { mean, Math.sqrt(standardDeviation/length) };
+        return stats;
     }
 }
