@@ -57,6 +57,7 @@ dependencies {
     implementation 'com.github.kittinunf.fuel:fuel-android:1.10.0'
     implementation 'com.ibm.watson:ibm-watson:10.1.0'
     implementation 'com.google.code.gson:gson:2.10'
+    implementation 'com.theokanning.openai-gpt3-java:client:0.8.0'
 
 
 }
