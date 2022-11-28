@@ -73,7 +73,13 @@ public class SignInActivity extends AppCompatActivity {
         ((Button) findViewById(R.id.home_btn)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                switchActivities();
+                switchActivities(MainActivity.class);
+            }
+        });
+        ((Button) findViewById(R.id.chatbot_btn)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                switchActivities(ChatbotActivity.class);
             }
         });
 
@@ -129,7 +135,7 @@ public class SignInActivity extends AppCompatActivity {
             System.out.println("signed in");
             System.out.println(account.getDisplayName());
             updateUI(account);
-            switchActivities();
+            switchActivities(MainActivity.class);
         } catch (ApiException e) {
             System.out.println("Error" + e.getStatusCode());
             updateUI(null);
@@ -160,8 +166,9 @@ public class SignInActivity extends AppCompatActivity {
         updateUI(account);
     }
 
-    private void switchActivities() {
-        Intent switchActivityIntent = new Intent(this, MainActivity.class);
+    private void switchActivities(Class activityClass) {
+        Intent switchActivityIntent = new Intent(this, activityClass);
+        switchActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
         startActivity(switchActivityIntent);
     }
 

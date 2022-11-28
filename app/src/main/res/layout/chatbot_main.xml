@@ -38,16 +38,23 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:gravity="bottom">
+            android:layout_height="150dp"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
 
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/input_message"
-                android:layout_width="match_parent"
+                android:layout_width="266dp"
                 android:layout_height="wrap_content"
                 android:hint="Message" />
 
+            <Button
+                android:id="@+id/submit_btn"
+                android:layout_width="122dp"
+                android:layout_height="73dp"
+                android:layout_weight="1"
+                android:text="Send" />
 
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
