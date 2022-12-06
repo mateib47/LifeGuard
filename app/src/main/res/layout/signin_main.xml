@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#87cefa"
     tools:context=".SignInActivity">
-
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -35,20 +36,21 @@
             android:id="@+id/sign_out_and_disconnect"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="@android:color/holo_blue_light"
+            android:backgroundTint="#0F64E4"
             android:text="Sign out" />
 
         <Button
             android:id="@+id/home_btn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="@android:color/holo_blue_light"
+            android:backgroundTint="#0F64E4"
             android:text="Home" />
+
         <Button
             android:id="@+id/chatbot_btn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="@android:color/holo_blue_light"
+            android:backgroundTint="#0F64E4"
             android:text="Chatbot" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
