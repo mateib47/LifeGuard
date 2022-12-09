@@ -15,9 +15,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.theokanning.openai.OpenAiService;
+import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class ChatbotActivity extends AppCompatActivity {
     OpenAiService service;
@@ -53,15 +55,33 @@ public class ChatbotActivity extends AppCompatActivity {
             }
         });
     }
-    //TODO PUT IN DIFFERENT THREAD
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void initAi(String prompt){
-        CompletionRequest completionRequest = CompletionRequest.builder()
-                .prompt(prompt)
-                .echo(true)
-                .stop(Arrays.asList(" Human:"," AI:"))
-                .build();
-        service.createCompletion("ada", completionRequest).getChoices().forEach(System.out::println);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try  {
+                    CompletionRequest completionRequest = CompletionRequest.builder()
+                            .model("text-davinci-002")
+                            .prompt(prompt)
+                            .temperature(0.9)
+                            .maxTokens(150)
+                            .topP(1.0)
+                            .frequencyPenalty(0.0)
+                            .presencePenalty(0.6)
+                            .stop(Arrays.asList(" Human:", " AI:"))
+                            .build();
+                    List<CompletionChoice> list =  service.createCompletion(completionRequest).getChoices();
+                    for(CompletionChoice c : list){
+                        System.out.println(c.getText());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
     }
 
     public void sendMessage(String msg){
