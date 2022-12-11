@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -136,15 +135,30 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
 
+        List <Integer> weeks = new ArrayList<>();
+
         Fitness.getHistoryClient(getApplicationContext(),
                 Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(getApplicationContext())))
                 .readData(request)
                 .addOnSuccessListener(response ->{
+                    System.out.println(response.getBuckets().size() +" "+ response.getBuckets().get(0).getDataSets().size());
                     for (Bucket bucket : response.getBuckets()) {
-                        System.out.println("bucket");
                         for (DataSet dataSet : bucket.getDataSets()) {
-                            dumpDataSet(dataSet);
+                            if (dataSet.isEmpty()){
+//                                System.out.println("Empty dataset");
+                            }else{
+                                weeks.add(dumpDataSet(dataSet));
+
+                            }
                         }
+                    }
+                    System.out.println(weeks);
+                    double[] stats = calculateSD(weeks);
+                    // System.out.println(weeks);
+                    System.out.println("Standard deviation " + stats[1]);
+                    if (weeks.get(weeks.size()-1) < stats[0] - stats[1]){
+                        //todo actuate
+                        System.out.println("Low score");
                     }
 //                {
 //                    Optional<DataSet> heartPointsSet = response.getDataSets().stream().findFirst();
@@ -165,24 +179,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
     // todo calculate the distribution of the weeks
-    private void dumpDataSet(DataSet dataSet) {
-        List <Integer> weeks = new ArrayList<>();
+    private int dumpDataSet(DataSet dataSet) {
         int totalHeartPoints = 0;
-        System.out.println("printing data set");
-        Log.i(TAG, "Data returned for Data type: ${dataSet.dataType.name}");
         for (DataPoint dp : dataSet.getDataPoints()) {
             for (Field field : dp.getDataType().getFields()) {
-                totalHeartPoints += (int) dp.getValue(Field.FIELD_INTENSITY).asFloat();
-                weeks.add((int) dp.getValue(Field.FIELD_INTENSITY).asFloat());
-                System.out.println(dp.getValue(Field.FIELD_INTENSITY));
+                totalHeartPoints += (int) dp.getValue(field.FIELD_INTENSITY).asFloat();
             }
         }
-        System.out.println("Total points "+ totalHeartPoints);
-        double[] stats = calculateSD(weeks);
-        System.out.println("Standard deviation " + stats[1]);
-        if (weeks.get(weeks.size()-1) < stats[0] - stats[1]){
-            //todo actuate
-        }
+        //System.out.println("Total points "+ totalHeartPoints);
+        return totalHeartPoints;
     }
 
     private void analyzeSms() {
