@@ -11,6 +11,8 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.StrictMode;
 import android.view.View;
 import android.widget.Button;
@@ -31,7 +33,10 @@ import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.ibm.cloud.sdk.core.security.IamAuthenticator;
 import com.ibm.watson.natural_language_understanding.v1.NaturalLanguageUnderstanding;
 import com.ibm.watson.natural_language_understanding.v1.model.AnalysisResults;
@@ -55,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView resultTextView;
     private String TAG = "mainActivity";
     private FusedLocationProviderClient fusedLocationClient;
+    private HandlerThread mWorkerThread;
+    private Handler mHandlerWorker;
 
 
     @Override
@@ -63,6 +70,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         resultTextView = (TextView) findViewById(R.id.resultText);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        mWorkerThread = new HandlerThread("Worker Thread");
+        mWorkerThread.start();
+        mHandlerWorker = new Handler(mWorkerThread.getLooper());
 
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
             @SneakyThrows
@@ -82,28 +93,48 @@ public class MainActivity extends AppCompatActivity {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View view) {
-                readLocation();
+                analyzeLocation();
             }
         });
     }
 
-    private void readLocation() {
+    private void analyzeLocation() {
+        Location location = readLocation();
+        LatLng myLocation = new LatLng(location.getLatitude(), location.getLongitude());
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        builder.include(new LatLng(36.017041, 129.322594) ).include(new LatLng(36.016734, 129.322815));
+        LatLngBounds problematicLocation  = builder.build();
+        if(problematicLocation.contains(myLocation)){
+            System.out.println("Located in a problematic location");
+        }else{
+            System.out.println("All good with location");
+        }
+    }
+
+    private Location readLocation() {
         System.out.println("Reading location...");
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
-            return;
+            return null;
         }
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        // Got last known location. In some rare situations this can be null.
-                        if (location != null) {
-                            System.out.println(location);
-                        }
-                    }
-                });
+        Task<Location> locationTask = fusedLocationClient.getLastLocation();
+//
+
+        locationTask.addOnSuccessListener(new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    System.out.println(location);
+                } else {
+                    System.out.println("Location null");
+                }
+            }
+        });
+        while(true){
+            if (locationTask.isComplete())
+                return locationTask.getResult();
+        }
     }
 
     protected List readSms() {

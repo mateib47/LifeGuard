@@ -1,6 +1,5 @@
 package com.example.lifeguard;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -59,6 +58,7 @@ public class SignInActivity extends AppCompatActivity {
         showPermission(android.Manifest.permission.READ_SMS);
         showPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION);
         showPermission(android.Manifest.permission.READ_PHONE_STATE);
+        showPermission(android.Manifest.permission.ACCESS_FINE_LOCATION);
 
         ((SignInButton) findViewById(R.id.sign_in_button)).setOnClickListener(new View.OnClickListener() {
             @Override
