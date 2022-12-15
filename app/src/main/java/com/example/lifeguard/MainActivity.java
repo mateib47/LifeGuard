@@ -2,6 +2,7 @@ package com.example.lifeguard;
 
 import android.Manifest;
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.StrictMode;
+import android.os.SystemClock;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -21,6 +23,7 @@ import android.widget.TextView;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.common.api.Scope;
@@ -62,6 +65,8 @@ public class MainActivity extends AppCompatActivity {
     private FusedLocationProviderClient fusedLocationClient;
     private HandlerThread mWorkerThread;
     private Handler mHandlerWorker;
+    public static final String NOTIFICATION_CHANNEL_ID = "10001" ;
+    private final static String default_notification_channel_id = "default" ;
 
 
     @Override
@@ -269,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
                 //actuate
             }
         }
-        sendNotification(1);
+        sendNotification(10000);
 
 //        for (int message = 0; message < messages.size(); message++) {
 //            for (int word = 0; word < suicide_messages.size(); word++) {
@@ -282,15 +287,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //send notification after an amount of time to make sure user is ok
-    public void sendNotification(int multiplier) {
-        Intent notificationIntent = new Intent(this, ShowNotification.class);
-        PendingIntent contentIntent = PendingIntent.getService(this, 0, notificationIntent,
-                PendingIntent.FLAG_CANCEL_CURRENT);
+    public void sendNotification(int delay) {
+        System.out.println("sending notification in " + delay + " minutes");
+        Intent notificationIntent = new Intent( this, NotificationPublisher. class ) ;
+        notificationIntent.putExtra(NotificationPublisher. NOTIFICATION_ID , 1 ) ;
+        notificationIntent.putExtra(NotificationPublisher. NOTIFICATION , getNotification()) ;
+        PendingIntent pendingIntent = PendingIntent. getBroadcast ( this, 0 , notificationIntent , PendingIntent. FLAG_UPDATE_CURRENT ) ;
+        long futureInMillis = SystemClock. elapsedRealtime () + delay ;
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context. ALARM_SERVICE ) ;
+        assert alarmManager != null;
+        alarmManager.set(AlarmManager. ELAPSED_REALTIME_WAKEUP , futureInMillis , pendingIntent) ;
+    }
 
-        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        am.cancel(contentIntent);
-        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis()
-                + AlarmManager.INTERVAL_FIFTEEN_MINUTES * multiplier, AlarmManager.INTERVAL_FIFTEEN_MINUTES * multiplier, contentIntent);
+    private Notification getNotification () {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder( this, default_notification_channel_id ) ;
+        builder.setContentTitle( "Just wanted to make sure you are fine" ) ;
+        builder.setContentText("How are you feeling?") ;
+        builder.setSmallIcon(R.drawable.ic_launcher_foreground ) ;
+        builder.setAutoCancel( true ) ;
+        builder.setChannelId( NOTIFICATION_CHANNEL_ID ) ;
+        return builder.build() ;
     }
 
 
