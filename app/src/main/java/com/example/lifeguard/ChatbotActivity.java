@@ -2,27 +2,28 @@ package com.example.lifeguard;
 
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.view.KeyEvent;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.lifeguard.Api.Gpt3Api;
 import com.example.lifeguard.Api.Gpt3Request;
 import com.example.lifeguard.Api.Gpt3Response;
-import com.google.android.material.textfield.TextInputEditText;
-import com.theokanning.openai.OpenAiService;
+import com.example.lifeguard.view.ChatAdapter;
+import com.example.lifeguard.view.ChatMessage;
 
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -34,39 +35,70 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ChatbotActivity extends AppCompatActivity {
-    OpenAiService service;
-    public static Handler handler = new Handler();
-    String defaultPrompt = "The assistant is respectful, empathetic, non-judgmental and very friendly. The assistant's task is to listen to the person and give empathetic responses and sometimes ask questions.";
+    private String defaultPrompt;
+    private RecyclerView mChatRecyclerView;
+    private ChatAdapter mChatAdapter;
+    private EditText mMessageEditText;
+    private Button mSendButton;
+    private LinearLayout mMessageLayout;
+
+
+
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.chatbot_main);
-        service = new OpenAiService(String.valueOf(R.string.openai));
-        Button submit_btn = (Button) findViewById(R.id.submit_btn);
-        TextInputEditText textInputEditText = (TextInputEditText) findViewById(R.id.input_message);
-        initAi(defaultPrompt);
+        setContentView(R.layout.chatbot_main2);
 
-        textInputEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    submit_btn.performClick();
-                    return true;
-                }
-                return false;
-            }
-        });
-        submit_btn.setOnClickListener(new Button.OnClickListener() {
+        defaultPrompt = getString(R.string.chatbot_initial_prompt);
 
-            @RequiresApi(api = Build.VERSION_CODES.N)
+
+        mChatRecyclerView = findViewById(R.id.recycler_view);
+        mChatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mChatAdapter = new ChatAdapter(new ArrayList<ChatMessage>());
+        mChatRecyclerView.setAdapter(mChatAdapter);
+        mMessageEditText = findViewById(R.id.edit_message);
+        mSendButton = findViewById(R.id.button_send);
+        mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String msg = textInputEditText.getText().toString().trim();
-                sendMessage(msg);
+                sendMessage();
             }
         });
+
+//        initAi(defaultPrompt);
+
+//        textInputEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+//            @Override
+//            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+//                if (actionId == EditorInfo.IME_ACTION_DONE) {
+//                    submit_btn.performClick();
+//                    return true;
+//                }
+//                return false;
+//            }
+//        });
+//        submit_btn.setOnClickListener(new Button.OnClickListener() {
+//
+//            @RequiresApi(api = Build.VERSION_CODES.N)
+//            @Override
+//            public void onClick(View view) {
+//                String msg = textInputEditText.getText().toString().trim();
+//                sendMessage(msg);
+//            }
+//        });
     }
+
+    private void sendMessage() {
+        String messageText = mMessageEditText.getText().toString();
+        String username = "User"; // You may want to get the username from a login screen or some other source
+        ChatMessage message = new ChatMessage(messageText, username);
+        mChatAdapter.addMessage(message);
+        mMessageEditText.setText("");
+        mMessageLayout = findViewById(R.id.message_layout);
+    }
+
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void initAi(String prompt){

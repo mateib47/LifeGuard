@@ -30,13 +30,6 @@
         tools:layout_editor_absoluteX="-4dp"
         tools:layout_editor_absoluteY="201dp">
 
-        <TextView
-            android:id="@+id/textView4"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_weight="1"
-            android:text="TextView" />
-
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="150dp"
@@ -57,6 +50,12 @@
                 android:layout_weight="1"
                 android:text="Send" />
 
+            <LinearLayout
+                android:layout_width="412dp"
+                android:layout_height="307dp"
+                android:orientation="vertical"></LinearLayout>
+
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
