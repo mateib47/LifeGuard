@@ -1,12 +1,18 @@
 package com.example.lifeguard.Api;
 
-import lombok.AllArgsConstructor;
+import java.util.List;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 @AllArgsConstructor
 public class Gpt3Response {
-    private String response;
+    private List<Choices> choices;
     //TODO
     public String getResponse() {
-        return response;
+        return choices.get(0).getText();
     }
 }

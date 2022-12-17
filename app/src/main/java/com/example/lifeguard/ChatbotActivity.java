@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -19,6 +20,13 @@ import com.example.lifeguard.Api.Gpt3Response;
 import com.google.android.material.textfield.TextInputEditText;
 import com.theokanning.openai.OpenAiService;
 
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -28,7 +36,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class ChatbotActivity extends AppCompatActivity {
     OpenAiService service;
     public static Handler handler = new Handler();
-    String defaultPrompt = "The following is a conversation with an AI assistant. The assistant is respectful, empathetic, non-judgmental and very friendly.\\n\\nHuman: Hello, who are you?\\nAI: I am an AI created by OpenAI. How can I help you today?\\nHuman: ";
+    String defaultPrompt = "The assistant is respectful, empathetic, non-judgmental and very friendly. The assistant's task is to listen to the person and give empathetic responses and sometimes ask questions.";
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -65,9 +73,18 @@ public class ChatbotActivity extends AppCompatActivity {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                OkHttpClient client = new OkHttpClient.Builder().addInterceptor(new Interceptor() {
+                    @Override
+                    public okhttp3.Response intercept(Chain chain) throws IOException {
+                        Request newRequest  = chain.request().newBuilder()
+                                .addHeader("Authorization", "Bearer " + getString(R.string.openai))
+                                .build();
+                        return chain.proceed(newRequest);
+                    }
+                }).build();
                 Retrofit retrofit = new Retrofit.Builder()
-                        .client
-                        .baseUrl("https://api.openai.com")
+                        .client(client)
+                        .baseUrl("https://api.openai.com/")
                         .addConverterFactory(GsonConverterFactory.create())
                         .build();
                 Gpt3Api api = retrofit.create(Gpt3Api.class);
@@ -80,6 +97,13 @@ public class ChatbotActivity extends AppCompatActivity {
                             System.out.println(gpt3Response.getResponse());
                         } else {
                             System.out.println("Chatbot api error");
+                            try {
+                                JSONObject jObjError = new JSONObject(response.errorBody().string());
+                                Toast.makeText(getApplicationContext(), jObjError.getJSONObject("error").getString("message"), Toast.LENGTH_LONG).show();
+                                System.out.println(jObjError.getJSONObject("error").getString("message"));
+                            } catch (Exception e) {
+                                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
 
@@ -88,26 +112,6 @@ public class ChatbotActivity extends AppCompatActivity {
                         // handle failure
                     }
                 });
-
-
-//                try  {
-//                    CompletionRequest completionRequest = CompletionRequest.builder()
-//                            .model("text-davinci-002")
-//                            .prompt(prompt)
-//                            .temperature(0.9)
-//                            .maxTokens(150)
-//                            .topP(1.0)
-//                            .frequencyPenalty(0.0)
-//                            .presencePenalty(0.6)
-//                            .stop(Arrays.asList(" Human:", " AI:"))
-//                            .build();
-//                    List<CompletionChoice> list =  service.createCompletion(completionRequest).getChoices();
-//                    for(CompletionChoice c : list){
-//                        System.out.println(c.getText());
-//                    }
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
             }
         });
         thread.start();
@@ -116,17 +120,4 @@ public class ChatbotActivity extends AppCompatActivity {
     public void sendMessage(String msg){
         System.out.println(msg);
     }
-    /*
-    *
-    * {
-  model: "text-davinci-002",
-  prompt: "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\nHuman: Hello, who are you?\nAI: I am an AI created by OpenAI. How can I help you today?\nHuman: ",
-  temperature: 0.9,
-  max_tokens: 150,
-  top_p: 1,
-  frequency_penalty: 0,
-  presence_penalty: 0.6,
-  stop: [" Human:", " AI:"],
-}
-    * */
 }

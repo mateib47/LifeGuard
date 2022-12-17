@@ -5,6 +5,6 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface Gpt3Api {
-    @POST("/v1/documents")
+    @POST("v1/completions")
     Call<Gpt3Response> generateText(@Body Gpt3Request request);
 }
