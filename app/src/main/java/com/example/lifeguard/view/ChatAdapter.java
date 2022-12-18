@@ -18,7 +18,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
 
     public ChatAdapter(List<ChatMessage> messages) {
         mMessages = messages;
-        right = true;
+        right = false;
     }
 
     @Override

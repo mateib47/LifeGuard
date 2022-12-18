@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -40,7 +39,6 @@ public class ChatbotActivity extends AppCompatActivity {
     private ChatAdapter mChatAdapter;
     private EditText mMessageEditText;
     private Button mSendButton;
-    private LinearLayout mMessageLayout;
 
 
 
@@ -63,45 +61,26 @@ public class ChatbotActivity extends AppCompatActivity {
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendMessage();
+                String messageText = mMessageEditText.getText().toString();
+                sendMessage(messageText);
+                sendRequest(defaultPrompt+"Human: "+messageText);
+                mMessageEditText.setText("");
             }
         });
 
-//        initAi(defaultPrompt);
-
-//        textInputEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-//            @Override
-//            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-//                if (actionId == EditorInfo.IME_ACTION_DONE) {
-//                    submit_btn.performClick();
-//                    return true;
-//                }
-//                return false;
-//            }
-//        });
-//        submit_btn.setOnClickListener(new Button.OnClickListener() {
-//
-//            @RequiresApi(api = Build.VERSION_CODES.N)
-//            @Override
-//            public void onClick(View view) {
-//                String msg = textInputEditText.getText().toString().trim();
-//                sendMessage(msg);
-//            }
-//        });
+        sendRequest(defaultPrompt);
     }
 
-    private void sendMessage() {
-        String messageText = mMessageEditText.getText().toString();
-        String username = "User"; // You may want to get the username from a login screen or some other source
+    private void sendMessage(String messageText) {
+        messageText = messageText.trim();
+        String username = "User";
         ChatMessage message = new ChatMessage(messageText, username);
         mChatAdapter.addMessage(message);
-        mMessageEditText.setText("");
-        mMessageLayout = findViewById(R.id.message_layout);
     }
 
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    private void initAi(String prompt){
+    private void sendRequest(String prompt){
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -127,6 +106,7 @@ public class ChatbotActivity extends AppCompatActivity {
                         if (response.isSuccessful()) {
                             Gpt3Response gpt3Response = response.body();
                             System.out.println(gpt3Response.getResponse());
+                            sendMessage(gpt3Response.getResponse());
                         } else {
                             System.out.println("Chatbot api error");
                             try {
@@ -149,7 +129,4 @@ public class ChatbotActivity extends AppCompatActivity {
         thread.start();
     }
 
-    public void sendMessage(String msg){
-        System.out.println(msg);
-    }
 }

@@ -6,12 +6,12 @@ import java.util.List;
 public class Gpt3Request {
     private String model;
     private String prompt;
-    private double temperature = 0.9;
-    private int max_tokens = 150;
-    private double top_p = 1.0;
-    private double frequency_penalty = 0.0;
-    private double presence_penalty = 0.6;
-    private List<String> stop = Arrays.asList(" Human:", " AI:");
+    private double temperature;
+    private int max_tokens;
+    private double top_p;
+    private double frequency_penalty;
+    private double presence_penalty;
+    private List<String> stop;
 
     public Gpt3Request(String model, String prompt, double temperature, int max_tokens, double top_p, double frequency_penalty, double presence_penalty, List<String> stop) {
         this.model = model;
@@ -27,5 +27,11 @@ public class Gpt3Request {
     public Gpt3Request(String model, String prompt) {
         this.model = model;
         this.prompt = prompt;
+        this.temperature = 0.9;
+        this.max_tokens = 150;
+        this.top_p = 1.0;
+        this.frequency_penalty = 0.0;
+        this.presence_penalty = 0.6;
+        this.stop = Arrays.asList(" Human:", " AI:");
     }
 }
