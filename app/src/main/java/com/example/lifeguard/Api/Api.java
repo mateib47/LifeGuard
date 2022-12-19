@@ -6,7 +6,9 @@ import retrofit2.http.POST;
 
 public interface Api {
 
-    String BASE_URL = "http://10.0.2.2:8080/";
+    String BASE_URL = "https://lifeguard-api.herokuapp.com/";
     @POST("api/v1/user/add")
     Call<Long> addUser(@Body User body);
+    @POST("api/v1/contact")
+    Call<Long> contactPerson(@Body ContactRequest body);
 }

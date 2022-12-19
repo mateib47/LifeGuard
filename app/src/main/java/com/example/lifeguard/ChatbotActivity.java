@@ -78,7 +78,6 @@ public class ChatbotActivity extends AppCompatActivity {
         mChatAdapter.addMessage(message, isUser);
     }
 
-
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void sendRequest(String prompt){
         Thread thread = new Thread(new Runnable() {

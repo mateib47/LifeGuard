@@ -18,19 +18,21 @@ public class ContactService {
     public String sendEmail(ContactRequest contactRequest) {
         boolean isValidEmail = emailSender.validate(contactRequest.getEmail());
         Optional<LifeguardUser> person = personRepository.findByEmail(contactRequest.getEmail());
+        String name, phoneNumber;
         if(person.isEmpty()){
             System.out.println("User's email not found in database");
             return "fail";
         }else{
-            //todo use data stored in Person object
+            name = person.get().getFirstName();
+            phoneNumber = person.get().getPhoneNumber();
         }
         if (!isValidEmail) {
             throw new IllegalStateException("Email " + contactRequest.getEmail() + " not valid");
         }
-        emailSender.send("bucur.matei@yahoo.com", buildEmail(contactRequest.getEmail(), contactRequest.getMessage()));
+        emailSender.send("bucur.matei@yahoo.com", buildEmail(name, phoneNumber, contactRequest.getEmail(), contactRequest.getMessage()));
         return "success";
     }
-    private String buildEmail(String name, String message) {
+    private String buildEmail(String name, String phoneNumber, String email, String message) {
         return "<div style=\"font-family:Helvetica,Arial,sans-serif;font-size:16px;margin:0;color:#0b0c0c\">\n" +
                 "\n" +
                 "<span style=\"display:none;font-size:1px;color:#fff;max-height:0\"></span>\n" +
@@ -86,7 +88,7 @@ public class ContactService {
                 "      <td width=\"10\" valign=\"middle\"><br></td>\n" +
                 "      <td style=\"font-family:Helvetica,Arial,sans-serif;font-size:19px;line-height:1.315789474;max-width:560px\">\n" +
                 "        \n" +
-                "            <p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\">Hi Matei,</p><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> "+ name+" wants to contact you </p>\n Here is the message: <p>" + message + "</p>"+
+                "            <p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\">Hi, </p><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> "+ name + " "+ message+"</p>\n You can drop them a message at: <p>" + email + " or call at "+ phoneNumber+ "</p>"+
                 "        \n" +
                 "      </td>\n" +
                 "      <td width=\"10\" valign=\"middle\"><br></td>\n" +

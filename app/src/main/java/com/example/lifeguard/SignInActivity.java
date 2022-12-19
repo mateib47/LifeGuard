@@ -51,6 +51,7 @@ public class SignInActivity extends AppCompatActivity {
                 .requestEmail()
                 .requestScopes(new Scope("https://www.googleapis.com/auth/fitness.activity.read"),
                         new Scope("https://www.googleapis.com/auth/user.phonenumbers.read"),
+                        new Scope("https://www.googleapis.com/auth/fitness.sleep.read"),
                         new Scope("https://www.googleapis.com/auth/fitness.location.read"),
                         new Scope("https://www.googleapis.com/auth/fitness.nutrition.read"))
                 .build();
@@ -215,6 +216,7 @@ public class SignInActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Data added to API", Toast.LENGTH_SHORT).show();
                 Long responseFromAPI = response.body();
                 String responseString = "Response Code : " + response.code() + "\nId : " + responseFromAPI.toString();
+                System.out.println(responseFromAPI.toString());
                 Toast.makeText(getApplicationContext(), responseString, Toast.LENGTH_SHORT).show();
             }
 

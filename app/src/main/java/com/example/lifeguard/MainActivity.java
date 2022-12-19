@@ -18,13 +18,18 @@ import android.os.StrictMode;
 import android.os.SystemClock;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
+import com.example.lifeguard.Api.Gpt3Api;
+import com.example.lifeguard.Api.Gpt3RequestModeration;
+import com.example.lifeguard.Api.Gpt3ResponseModeration;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
@@ -48,6 +53,10 @@ import com.ibm.watson.natural_language_understanding.v1.model.EmotionOptions;
 import com.ibm.watson.natural_language_understanding.v1.model.Features;
 import com.ibm.watson.natural_language_understanding.v1.model.TargetedEmotionResults;
 
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -58,6 +67,14 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import lombok.SneakyThrows;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
     private TextView resultTextView;
@@ -67,12 +84,20 @@ public class MainActivity extends AppCompatActivity {
     private Handler mHandlerWorker;
     public static final String NOTIFICATION_CHANNEL_ID = "10001" ;
     private final static String default_notification_channel_id = "default" ;
+    private List<String> messages;
+    private ProgressBar progressBarMsg;
+    private ProgressBar progressBarFit;
+    private ProgressBar progressBarSleep;
+    private ProgressBar progressBarLoc;
+
+
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main2);
         resultTextView = (TextView) findViewById(R.id.resultText);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -80,27 +105,30 @@ public class MainActivity extends AppCompatActivity {
         mWorkerThread.start();
         mHandlerWorker = new Handler(mWorkerThread.getLooper());
 
+        progressBarMsg = findViewById(R.id.progress_bar_1);
+        progressBarFit = findViewById(R.id.progress_bar_2);
+        progressBarSleep = findViewById(R.id.progress_bar_3);
+        progressBarLoc = findViewById(R.id.progress_bar_4);
+
+
+        messages = readSms();
+
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @SneakyThrows
             @Override
             public void onClick(View view) {
                 analyzeSms();
-            }
-        });
-        ((Button) findViewById(R.id.button2)).setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override
-            public void onClick(View view) {
                 readFitnessActivity();
-            }
-        });
-        ((Button) findViewById(R.id.button3)).setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override
-            public void onClick(View view) {
+                readSleepActivity();
                 analyzeLocation();
+
             }
         });
+    }
+
+    private void readSleepActivity() {
+
     }
 
     private void analyzeLocation() {
@@ -111,8 +139,10 @@ public class MainActivity extends AppCompatActivity {
         LatLngBounds problematicLocation  = builder.build();
         if(problematicLocation.contains(myLocation)){
             System.out.println("Located in a problematic location");
+            progressBarLoc.setProgress(10);
         }else{
             System.out.println("All good with location");
+            progressBarLoc.setProgress(90);
         }
     }
 
@@ -124,7 +154,6 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
         Task<Location> locationTask = fusedLocationClient.getLastLocation();
-//
 
         locationTask.addOnSuccessListener(new OnSuccessListener<Location>() {
             @Override
@@ -142,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    protected List readSms() {
+    protected List<String> readSms() {
         System.out.println("Reading sms");
         List messages = new ArrayList<String>();
         final String[] projection = new String[]{"_id", "address", "body", "date"};
@@ -224,31 +253,37 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     System.out.println(weeks);
-                    double[] stats = calculateSD(weeks);
-                    // System.out.println(weeks);
-                    System.out.println("Standard deviation " + stats[1]);
-                    if (weeks.get(weeks.size()-1) < stats[0] - stats[1]){
-                        //todo actuate
-                        System.out.println("Low score");
-                    }
-//                {
-//                    Optional<DataSet> heartPointsSet = response.getDataSets().stream().findFirst();
-//                    int count = 0;
-//                    if (heartPointsSet.isPresent()) {
-//                        int totalHeartPoints = 0;
-//                        for (DataPoint dp : heartPointsSet.get().getDataPoints()) {
-//                            //if((int) dp.getValue(Field.FIELD_INTENSITY).asFloat() > 2)
-//                                count++;
-//                            totalHeartPoints += (int) dp.getValue(Field.FIELD_INTENSITY).asFloat();
-//                            System.out.println(dp.getValue(Field.FIELD_INTENSITY));
-//                        }
-//                        System.out.println("Hearth points" + totalHeartPoints);
-//                        System.out.println(count);
-//                        Log.i(TAG, "Total heart points: $totalHeartPoints");
-//                    }
+                    double[] stats = calculateSD(normalize(weeks));
+                    int mean = (int) stats[0], standardDev = (int)  stats[1];
+                    int current = weeks.get(weeks.size()-1);
+                    int score = (current - mean) / standardDev;
+                    progressBarFit.setProgress(score);
                 });
 
     }
+
+    public List<Integer> normalize(List<Integer> values){
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+
+        for (int value : values) {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+        }
+
+        int range = max - min;
+
+        for (int i = 0; i < values.size(); i++) {
+            values.set(i, (values.get(i) - min) / range);
+        }
+
+        for (int i = 0; i < values.size(); i++) {
+            values.set(i, values.get(i)*100);
+        }
+
+        return values;
+    }
+
     // todo calculate the distribution of the weeks
     private int dumpDataSet(DataSet dataSet) {
         int totalHeartPoints = 0;
@@ -261,29 +296,67 @@ public class MainActivity extends AppCompatActivity {
         return totalHeartPoints;
     }
 
-    private void analyzeSms() {
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private void analyzeSms(){
         System.out.println("Analyzing sms");
-        List<String> messages = readSms();
-//      List<String> suicide_messages = {};
-        double score = ibmApi(messages);
-        if (score == -1) {
-            resultTextView.setText("Error in computing the score");
-        } else {
-            resultTextView.setText("Sadness average score " + score);
-            if (score > 0.5) {
-                //actuate
+        messages = readSms();
+        String input = StringUtils.join(messages, ", ");
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                OkHttpClient client = new OkHttpClient.Builder().addInterceptor(new Interceptor() {
+                    @Override
+                    public okhttp3.Response intercept(Chain chain) throws IOException {
+                        Request newRequest  = chain.request().newBuilder()
+                                .addHeader("Authorization", "Bearer " + getString(R.string.openai))
+                                .build();
+                        return chain.proceed(newRequest);
+                    }
+                }).build();
+                Retrofit retrofit = new Retrofit.Builder()
+                        .client(client)
+                        .baseUrl("https://api.openai.com/")
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
+                Gpt3Api api = retrofit.create(Gpt3Api.class);
+                Gpt3RequestModeration request = new Gpt3RequestModeration(input);
+                api.classifyText(request).enqueue(new Callback<Gpt3ResponseModeration>() {
+                    @Override
+                    public void onResponse(Call<Gpt3ResponseModeration> call, Response<Gpt3ResponseModeration> response) {
+                        if (response.isSuccessful()) {
+                            Gpt3ResponseModeration gpt3Response = response.body();
+                            String[] textResponse = gpt3Response.getResponse();
+                            System.out.println(textResponse[0]+" "+ textResponse[1]);
+                            int score = (int) Math.round(Double.parseDouble(textResponse[1])*100);
+                            System.out.println("score "+score);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressBarMsg.setProgress(100 - score);
+                                }
+                            });
+                            //sendMessage(gpt3Response.getResponse(), false);
+                        } else {
+                            System.out.println("Chatbot api error");
+                            try {
+                                JSONObject jObjError = new JSONObject(response.errorBody().string());
+                                Toast.makeText(getApplicationContext(), jObjError.getJSONObject("error").getString("message"), Toast.LENGTH_LONG).show();
+                                System.out.println(jObjError.getJSONObject("error").getString("message"));
+                            } catch (Exception e) {
+                                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Gpt3ResponseModeration> call, Throwable t) {
+                        // handle failure
+                    }
+                });
             }
-        }
-        sendNotification(10000);
-
-//        for (int message = 0; message < messages.size(); message++) {
-//            for (int word = 0; word < suicide_messages.size(); word++) {
-//               if (message == word)
-//                    score += 1;
-//            }
-//        }
-
-        //todo add score of sms detection to the total analysis score
+        });
+        thread.start();
     }
 
     //send notification after an amount of time to make sure user is ok
