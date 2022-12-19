@@ -62,8 +62,8 @@ public class ChatbotActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 String messageText = mMessageEditText.getText().toString();
-                sendMessage(messageText);
-                sendRequest(defaultPrompt+"Human: "+messageText);
+                sendMessage(messageText, true);
+                sendRequest(defaultPrompt+"\nHuman: "+messageText + "\nAI:");
                 mMessageEditText.setText("");
             }
         });
@@ -71,11 +71,11 @@ public class ChatbotActivity extends AppCompatActivity {
         sendRequest(defaultPrompt);
     }
 
-    private void sendMessage(String messageText) {
+    private void sendMessage(String messageText, boolean isUser) {
         messageText = messageText.trim();
         String username = "User";
         ChatMessage message = new ChatMessage(messageText, username);
-        mChatAdapter.addMessage(message);
+        mChatAdapter.addMessage(message, isUser);
     }
 
 
@@ -105,8 +105,10 @@ public class ChatbotActivity extends AppCompatActivity {
                     public void onResponse(Call<Gpt3Response> call, Response<Gpt3Response> response) {
                         if (response.isSuccessful()) {
                             Gpt3Response gpt3Response = response.body();
-                            System.out.println(gpt3Response.getResponse());
-                            sendMessage(gpt3Response.getResponse());
+                            String textResponse = gpt3Response.getResponse();
+                            System.out.println(textResponse);
+                            defaultPrompt += "\nAI:" + textResponse;
+                            sendMessage(gpt3Response.getResponse(), false);
                         } else {
                             System.out.println("Chatbot api error");
                             try {
