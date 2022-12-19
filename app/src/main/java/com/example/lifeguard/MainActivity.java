@@ -27,9 +27,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
+import com.example.lifeguard.Api.ContactRequest;
 import com.example.lifeguard.Api.Gpt3Api;
 import com.example.lifeguard.Api.Gpt3RequestModeration;
 import com.example.lifeguard.Api.Gpt3ResponseModeration;
+import com.example.lifeguard.Api.RetrofitClient;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
@@ -89,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBarFit;
     private ProgressBar progressBarSleep;
     private ProgressBar progressBarLoc;
+    private int[] scores;
 
 
 
@@ -111,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
         progressBarLoc = findViewById(R.id.progress_bar_4);
 
 
+        scores = new int[4];
+
         messages = readSms();
 
         ((Button) findViewById(R.id.button)).setOnClickListener(new View.OnClickListener() {
@@ -122,27 +127,83 @@ public class MainActivity extends AppCompatActivity {
                 readFitnessActivity();
                 readSleepActivity();
                 analyzeLocation();
-
             }
         });
     }
 
+    private void checkScores() {
+        System.out.println("Final scores" + Arrays.toString(scores));
+        double finalScore = 0.5* scores[0] + 0.2*scores[1]+0.2*scores[2]+0.1*scores[3];
+        System.out.println("Final Score " + finalScore);
+        if(finalScore < 20){
+            sendContactRequest();
+        }else if (finalScore < 55){
+            sendNotification(10000);
+        }
+    }
+
+    private void sendContactRequest() {
+            ContactRequest contactRequest = new ContactRequest(GoogleSignIn.getLastSignedInAccount(this).getEmail()," is not feeling well.");
+            Call<String> call = RetrofitClient.getInstance().getMyApi().contactPerson(contactRequest);
+            call.enqueue(new Callback<String>() {
+                @Override
+                public void onResponse(Call<String> call, Response<String> response) {
+                    Toast.makeText(getApplicationContext(), "Contact request sent", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Call<String> call, Throwable t) {
+                    System.out.println(t);
+//                    Toast.makeText(getApplicationContext(), "Error in sending request", Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void readSleepActivity() {
 
+        ZonedDateTime endTime = LocalDateTime.now().atZone(ZoneId.systemDefault());
+        ZonedDateTime startTime = endTime.minusYears(1);
+        DataReadRequest request = new DataReadRequest.Builder()
+                .read(DataType.TYPE_SLEEP_SEGMENT)
+                .bucketByTime(7, TimeUnit.DAYS)
+                .setTimeRange(startTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(), TimeUnit.MILLISECONDS)
+                .build();
+
+        List <Integer> weeks = new ArrayList<>();
+
+        Fitness.getHistoryClient(getApplicationContext(),
+                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(getApplicationContext())))
+                .readData(request)
+                .addOnSuccessListener(response -> {
+                    for (Bucket bucket : response.getBuckets()) {
+                        for (DataSet dataSet : bucket.getDataSets()) {
+                            if (dataSet.isEmpty()){
+//                                System.out.println("Empty dataset");
+                            }else{
+                                weeks.add(dumpDataSet2(dataSet));
+                            }
+                        }
+                    }
+                });
+        //not enough data, do the same as fitness
+        scores[2] = 10;
     }
 
     private void analyzeLocation() {
         Location location = readLocation();
         LatLng myLocation = new LatLng(location.getLatitude(), location.getLongitude());
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        builder.include(new LatLng(36.017041, 129.322594) ).include(new LatLng(36.016734, 129.322815));
+        builder.include(new LatLng(36.012631, 129.321756) ).include(new LatLng(36.012432, 129.322118));
         LatLngBounds problematicLocation  = builder.build();
         if(problematicLocation.contains(myLocation)){
             System.out.println("Located in a problematic location");
             progressBarLoc.setProgress(10);
+            scores[3] = 10;
         }else{
             System.out.println("All good with location");
             progressBarLoc.setProgress(90);
+            scores[3] = 90;
         }
     }
 
@@ -258,6 +319,7 @@ public class MainActivity extends AppCompatActivity {
                     int current = weeks.get(weeks.size()-1);
                     int score = (current - mean) / standardDev;
                     progressBarFit.setProgress(score);
+                    scores[1] = score;
                 });
 
     }
@@ -282,6 +344,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return values;
+    }
+
+    private int dumpDataSet2(DataSet dataSet) {
+        long totalSleep = 0;
+        for (DataPoint dp : dataSet.getDataPoints()) {
+            for (Field field : dp.getDataType().getFields()) {
+                totalSleep += dp.getEndTime(TimeUnit.MILLISECONDS) - dp.getStartTime(TimeUnit.MILLISECONDS);;
+            }
+        }
+        return (int) (totalSleep / (60 * 60 * 1000));
     }
 
     // todo calculate the distribution of the weeks
@@ -334,6 +406,8 @@ public class MainActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     progressBarMsg.setProgress(100 - score);
+                                    scores[0] = 100 - score;
+                                    checkScores();
                                 }
                             });
                             //sendMessage(gpt3Response.getResponse(), false);

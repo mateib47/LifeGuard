@@ -26,7 +26,7 @@ public class EmailService implements EmailSender{
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
             helper.setText(email, true);
             helper.setTo(to);
-            helper.setSubject("Contact request");
+            helper.setSubject("Lifeguard");
             helper.setFrom("MyWebsite");
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
